@@ -90,10 +90,10 @@ Given a file, model produced by optimize and options, save the results of the op
 function save_choice_model(file, model, options, ll, CI, outsample_ll, pright)
 
     @unpack lb, ub, fit = options
-    @unpack θ = model
+    @unpack θ, trial_ids = model
 
     dict = Dict("ML_params"=> collect(Flatten.flatten(θ)),
-        "name" => get_param_names(θ), 
+        "name" => get_param_names(θ), "training_set" => trial_ids,
         "loglik" => ll, "outsample_ll" => outsample_ll,
         "lb"=> lb, "ub"=> ub, "fit"=> fit,
         "CI" => CI, "p_goright" => pright)
