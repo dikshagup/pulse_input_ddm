@@ -49,7 +49,7 @@ function create_options_and_x0(; modeltype = "bing")
         :ϕ =>           [0.01, 1.5, true, true, true, true, 1. + eps()], 
         :τ_ϕ =>         [0.005, 1., true, true, true, true, eps()],   
         :lapse_prob =>  [0., 1., true, true, true, true, eps()],                  
-        :lapse_bias =>  [-10., 10., true, true, true, true, 0.], 
+        :lapse_bias =>  [-20., 20., true, true, true, true, 0.], 
         :lapse_modbeta=>[-10., 10., false, false, false, true, 0.],                                 
         :h_ηcL =>       [-5., 5., false, true, true, true, 0.], 
         :h_ηcR =>       [-5., 5., false, true, true, true, 0.], 
@@ -336,13 +336,14 @@ end
 
 Compute the gradient of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
 """
-function gradient(model::choiceDDM)
+function gradient(model::choiceDDM, options::choiceoptions)
 
     @unpack θ = model
+    @unpack fit, lb, ub = options
     x = [Flatten.flatten(θ)...]
-    ℓℓ(x) = -loglikelihood(x, model)
-
-    ForwardDiff.gradient(ℓℓ, x)
+    xfit, c = unstack(x, fit)
+    ℓℓ(x) = -loglikelihood(stack(x,c, fit), model)
+    ForwardDiff.gradient(ℓℓ, xfit)
 
 end
 
@@ -352,13 +353,14 @@ end
 
 Compute the hessian of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
 """
-function Hessian(model::choiceDDM)
+function Hessian(model::choiceDDM, options::choiceoptions)
 
     @unpack θ = model
+    @unpack fit, lb, ub = options
     x = [Flatten.flatten(θ)...]
-    ℓℓ(x) = -loglikelihood(x, model)
-
-    ForwardDiff.hessian(ℓℓ, x)
+    xfit,c = unstack(x, fit)
+    ℓℓ(xfit) = -loglikelihood(stack(xfit,c,fit), model)
+    ForwardDiff.hessian(ℓℓ, xfit)
 
 end
 
@@ -630,7 +632,7 @@ computes the probability of a rightward lapse based on trial history and general
 function get_rightlapse_prob(θlapse::θlapse, i_0)
     @unpack lapse_bias, lapse_modbeta = θlapse
     
-    # rbias =  1. ./(1. .+ exp.(-lapse_modbeta.*i_0 - lapse_bias))
+    rbias =  1. ./(1. .+ exp.(-lapse_modbeta.*i_0 - lapse_bias))
 
     if i_0 + lapse_bias > 0
         rbias = 1. - eps()
