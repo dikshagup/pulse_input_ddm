@@ -634,13 +634,13 @@ function get_rightlapse_prob(θlapse::θlapse, i_0)
     
     rbias =  1. ./(1. .+ exp.(-lapse_modbeta.*i_0 - lapse_bias))
 
-    if i_0 + lapse_bias > 0
-        rbias = 1. - eps()
-    elseif i_0 + lapse_bias < 0
-        rbias = 0. + eps()
-    else
-        rbias = 0.5
-    end
+    # if i_0 + lapse_bias > 0
+    #     rbias = 1. - eps()
+    # elseif i_0 + lapse_bias < 0
+    #     rbias = 0. + eps()
+    # else
+    #     rbias = 0.5
+    # end
 
 
     return rbias
