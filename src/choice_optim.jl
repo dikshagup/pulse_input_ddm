@@ -17,7 +17,7 @@ function optimize(data, data_dict, modeltype, options::DDMθoptions, dx::Float64
     ub, = unstack(ub, fit)
     x0,c = unstack(x0, fit)
 
-    trial_ids = get_samples_for_training(outsample_logll, data, data_dict)
+    trial_ids = get_samples_for_training(outsample_logll, data)
 
     ℓℓ(x) = objectivefn(modeltype, stack(x,c,fit), data, data_dict, trial_ids, dx)
 
@@ -43,7 +43,7 @@ end
 
 """
 """
-function get_samples_from_training(outsample_logll::Bool, data, frac = 0.8, seed = 1)
+function get_samples_for_training(outsample_logll::Bool, data, frac = 0.8, seed = 1)
 
     if outsample_logll == true
         ntrials = length(data)

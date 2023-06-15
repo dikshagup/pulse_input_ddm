@@ -13,7 +13,7 @@ using Discretizers, PositiveFactorizations
 using ImageFiltering
 using ForwardDiff: value
 using Parameters, Flatten
-using Colors, Bootstrap, PyPlot
+using Bootstrap
 
 import Base.rand
 import Base.Iterators: partition
@@ -475,7 +475,7 @@ export CIs, optimize, Hessian, gradient, objectivefn
 export load, reload, save, flatten, unflatten
 export synthetic_clicks, binLR, bin_clicks
 export compute_initial_pt, compute_bnd
-export compute_outsample_logll, get_samples_from_training
+export compute_outsample_logll, get_samples_for_training
 export return_fit_params, load_data_and_param, compute_and_plot
 
 
