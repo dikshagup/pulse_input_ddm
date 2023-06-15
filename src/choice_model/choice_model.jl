@@ -49,7 +49,7 @@ function create_options_and_x0(; modeltype = "bing")
         :ϕ =>           [0.01, 1.5, true, true, true, true, 1. + eps()], 
         :τ_ϕ =>         [0.005, 1., true, true, true, true, eps()],   
         :lapse_prob =>  [0., 1., true, true, true, true, eps()],                  
-        :lapse_bias =>  [-10., 10., true, true, true, true, 0.], 
+        :lapse_bias =>  [-20., 20., true, true, true, true, 0.], 
         :lapse_modbeta=>[-10., 10., false, false, true, true, 0.],                                 
         :h_η =>       [-5., 5., false, true, true, true, 0.], 
         :h_β =>        [0., 1., false, true, true, true, 0.], 
@@ -330,43 +330,39 @@ end
 
 
 """
-    gradient(model)
 
-Compute the gradient of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
+θ2(θ::θchoice) = θchoice(θz=θz2(θ.θz), bias=θ.bias, θslowdrift = θ.θslowdrift, 
+                        θlapse=θ.θlapse, θhist = θ.θhist)   
+ompute the gradient of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
 """
-function gradient(model::choiceDDM)
+function gradient(model::choiceDDM, options::choiceoptions)
 
     @unpack θ = model
+    @unpack fit, lb, ub = options
     x = [Flatten.flatten(θ)...]
-    ℓℓ(x) = -loglikelihood(x, model)
-
-    ForwardDiff.gradient(ℓℓ, x)
+    xfit, c = unstack(x, fit)
+    ℓℓ(x) = -loglikelihood(stack(x,c, fit), model)
+    ForwardDiff.gradient(ℓℓ, xfit)
 
 end
+
 
 
 """
     Hessian(model)
 
-Compute the hessian of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
-"""
-function Hessian(model::choiceDDM)
+    Compute the hessian of the negative log-likelihood at the current value of the parameters of a `choiceDDM`.
+    """
+function Hessian(model::choiceDDM, options::choiceoptions)
 
-    @unpack θ = model
-    x = [Flatten.flatten(θ)...]
-    ℓℓ(x) = -loglikelihood(x, model)
-
-    ForwardDiff.hessian(ℓℓ, x)
+   @unpack θ = model
+   @unpack fit, lb, ub = options
+   x = [Flatten.flatten(θ)...]
+   xfit,c = unstack(x, fit)
+   ℓℓ(xfit) = -loglikelihood(stack(xfit,c,fit), model)
+   ForwardDiff.hessian(ℓℓ, xfit)
 
 end
-
-
-
-"""
-"""
-θ2(θ::θchoice) = θchoice(θz=θz2(θ.θz), bias=θ.bias, θslowdrift = θ.θslowdrift, 
-                        θlapse=θ.θlapse, θhist = θ.θhist)   
-
 
 
 """
