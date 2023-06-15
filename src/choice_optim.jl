@@ -9,7 +9,7 @@ BACK IN THE DAY TOLS WERE: x_tol::Float64=1e-4, f_tol::Float64=1e-9, g_tol::Floa
 function optimize(data, data_dict, modeltype, options::DDMθoptions, dx::Float64; 
         x_tol::Float64=1e-14, f_tol::Float64=1e-12, g_tol::Float64=1e-12,
         iterations::Int=Int(5e3), show_trace::Bool=true, outer_iterations::Int=Int(1e1),
-        extended_trace::Bool=false, scaled::Bool=false)
+        extended_trace::Bool=false, scaled::Bool=false, outsample_logll::Bool = false)
 
     @unpack fit, lb, ub, x0 = options
 
@@ -17,7 +17,9 @@ function optimize(data, data_dict, modeltype, options::DDMθoptions, dx::Float64
     ub, = unstack(ub, fit)
     x0,c = unstack(x0, fit)
 
-    ℓℓ(x) = objectivefn(modeltype, stack(x,c,fit), data, data_dict, dx)
+    trial_ids = get_samples_for_training(outsample_logll, data, data_dict)
+
+    ℓℓ(x) = objectivefn(modeltype, stack(x,c,fit), data, data_dict, trial_ids, dx)
 
     output = optimize(x0, ℓℓ, lb, ub; g_tol=g_tol, x_tol=x_tol,
         f_tol=f_tol, iterations=iterations, show_trace=show_trace,
@@ -28,25 +30,57 @@ function optimize(data, data_dict, modeltype, options::DDMθoptions, dx::Float64
     x = stack(x,c,fit)
     θ = reconstruct_model(x, modeltype)
     model = choiceDDM(θ, data)
-    ll = loglikelihood(θ, data, data_dict, dx)
+    ll = loglikelihood(θ, data, data_dict, trial_ids, dx)
+    outsample_logll = compute_outsample_logll(θ, data, data_dict, trial_ids, dx)
     converged = Optim.converged(output)
 
     println("optimization complete. converged: $converged \n")
 
-    return model, output, ll
+    return model, output, ll, outsample_logll, trial_ids 
+end
+
+
+
+"""
+"""
+function get_samples_from_training(outsample_logll::Bool, data, frac = 0.8, seed = 1)
+
+    if outsample_logll == true
+        ntrials = length(data)
+        train = sample(Random.seed!(seed), 1:ntrials, ceil(Int, frac*ntrials), replace=false)
+    else
+        train = 1:length(data)
+    end
+
+    return train
+end
+
+"""
+"""
+function compute_outsample_logll(θ, data, data_dict, trial_ids, dx::Float64) 
+
+    test = setdiff(1:length(data), trial_ids)
+    if length(test == 0)
+        return 0.
+    else 
+        return loglikelihood(θ, data, data_dict, test, dx)
+    end
+
+
 end
 
 """
     objectivefn(modeltype, x::Vector{T1}, data, n::Int)
- Given a vector of parameters, data, n and modeltype returns negative log loglikelihood of the
- relevant modeltype    
-
+Given a vector of parameters, data, n and modeltype returns negative log loglikelihood of the
+relevant modeltype    
 """
-function objectivefn(modeltype, x::Vector{T1}, data, data_dict, dx::Float64) where {T1 <: Real}
+
+function objectivefn(modeltype, x::Vector{T1}, data, data_dict, trial_ids, dx::Float64) where {T1 <: Real}
     θ = reconstruct_model(x, modeltype)
-    -loglikelihood(θ, data, data_dict,dx)
+    -loglikelihood(θ, data, data_dict, trial_ids, dx)
 end
-  
+
+
 """
     optimize(x, ll;
         g_tol=1e-3, x_tol=1e-10, f_tol=1e-6,

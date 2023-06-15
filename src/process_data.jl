@@ -158,3 +158,34 @@ function save(file, model, options, modeltype, ll; CI = 0)
     =#
 
 end
+
+
+"""
+    save(file, model, options; ll, CI)
+Given a file, model produced by optimize and options, save the results of the optimization to a .MAT file
+"""
+function save(file, model, options, modeltype, ll, outsample_logll, trial_ids; CI = 0)
+
+    @unpack lb, ub, fit = options
+    @unpack θ = model
+
+    params = get_param_names(θ)
+
+    dict = Dict("ML_params"=> collect(Flatten.flatten(θ)),
+        "loglikelihood" => ll, "outsample_ll" => outsample_ll,
+        "training_set" => trial_ids,
+        "lb"=> lb, "ub"=> ub, "fit"=> fit, "modeltype"=> modeltype,
+        "CI" => CI)
+
+    matwrite(file, dict)
+
+    #=
+    if !isempty(H)
+        #dict["H"] = H
+        hfile = matopen(path*"hessian_"*file, "w")
+        write(hfile, "H", H)
+        close(hfile)
+    end
+    =#
+
+end

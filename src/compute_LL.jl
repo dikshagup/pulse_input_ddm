@@ -7,7 +7,8 @@ function loglikelihood(model::T, dx::Float64) where T <: DDM
 
     @unpack θ, data = model
     data_dict = make_data_dict(data)
-    loglikelihood(θ, data, data_dict, dx)
+    trial_ids = 1:length(data)
+    loglikelihood(θ, data, data_dict, trial_ids, dx)
 
 end
 
@@ -16,7 +17,7 @@ end
     loglikelihood(θ, data, n)
 Given parameters θ and data (inputs and choices) computes the LL for all trials
 """
-function loglikelihood(θ::DDMθ, data, data_dict, dx::Float64)
+function loglikelihood(θ::DDMθ, data, data_dict, trial_ids, dx::Float64)
 
     a_0 = compute_initial_pt(θ.hist_θz, θ.base_θz.B0, data_dict)  
     σ2_s, C = transform_log_space(θ, data_dict["teps"] )
@@ -32,7 +33,7 @@ function loglikelihood(θ::DDMθ, data, data_dict, dx::Float64)
         NDdistR = Gamma(ndtimeR1, ndtimeR2)
 
         P = pmap((data, a_0, nT) -> loglikelihood!(θ.base_θz, data, σ2_s, C, a_0, dx, pdf.(NDdistL, dt.*collect(nT:-1:1)).*dt, 
-                                        pdf.(NDdistR, dt.*collect(nT:-1:1)).*dt), data, a_0, data_dict["nT"])
+                                        pdf.(NDdistR, dt.*collect(nT:-1:1)).*dt), data[trial_ids], a_0[trial_ids], data_dict["nT"][trial_ids])
     
     elseif θ.ndtime_θz isa θz_ndtime_mod
         
@@ -42,9 +43,10 @@ function loglikelihood(θ::DDMθ, data, data_dict, dx::Float64)
         else
             lapse_dist = Exponential(θ.base_θz.lapse_u)
         end
+        
         P = pmap((data, a_0, ph_ind, nT) -> loglikelihood!(θ.base_θz, data, σ2_s, C, a_0, dx, θ.ndtime_θz, dt,
                                                             ph_ind, nT, pdf.(lapse_dist, dt.*collect(1:1:nT)).*dt),
-                                                        data, a_0, [1; data_dict["hits"][1:end-1]], data_dict["nT"])
+                                                        data[trial_ids], a_0[trial_ids], data_dict["hits"][max.(1, trial_ids .- 1)], data_dict["nT"][trial_ids])
     else
         error("unknown ndtime model")
     end
