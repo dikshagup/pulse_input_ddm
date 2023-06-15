@@ -3,7 +3,7 @@
 
 A julia module for fitting bounded accumlator models using behavioral and/or neural data from pulse-based evidence accumlation tasks.
 """
-module pulse_input_DDM
+module pulse_input_DDM_trialhistory
 
 using StatsBase, Distributions, LineSearches, JLD2
 using ForwardDiff, Distributed, LinearAlgebra
