@@ -172,7 +172,7 @@ function save(file, model, options, modeltype, ll, outsample_logll, trial_ids; C
     params = get_param_names(θ)
 
     dict = Dict("ML_params"=> collect(Flatten.flatten(θ)),
-        "loglikelihood" => ll, "outsample_ll" => outsample_ll,
+        "loglikelihood" => ll, "outsample_ll" => outsample_logll,
         "training_set" => trial_ids,
         "lb"=> lb, "ub"=> ub, "fit"=> fit, "modeltype"=> modeltype,
         "CI" => CI)
