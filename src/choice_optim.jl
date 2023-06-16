@@ -60,7 +60,7 @@ end
 function compute_outsample_logll(θ, data, data_dict, trial_ids, dx::Float64) 
 
     test = setdiff(1:length(data), trial_ids)
-    if length(test == 0)
+    if length(test) == 0
         return 0.
     else 
         return loglikelihood(θ, data, data_dict, test, dx)
